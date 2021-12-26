@@ -12,13 +12,18 @@ class RegisterViewController: UIViewController {
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.clipsToBounds = true
+        scrollView.isUserInteractionEnabled = true
         return scrollView
     }()
     private let imageView: UIImageView = {
         let imageView = UIImageView()
         imageView.image = UIImage(systemName: "person")
+        imageView.isUserInteractionEnabled = true
         imageView.tintColor = .gray
         imageView.contentMode = .scaleAspectFit
+        imageView.layer.masksToBounds = true
+        imageView.layer.borderWidth = 2
+        imageView.layer.borderColor = UIColor.lightGray.cgColor
         return imageView
     }()
     private let emailField : UITextField = {
@@ -103,13 +108,16 @@ class RegisterViewController: UIViewController {
         scrollView.addSubview(loginButton)
         scrollView.addSubview(firstNameField)
         scrollView.addSubview(lastnameField)
-        imageView.isUserInteractionEnabled = true
         scrollView.isUserInteractionEnabled = true
-        let gesture = UIGestureRecognizer(target: self, action: #selector(didTapChangeProfilePic))
+        imageView.isUserInteractionEnabled = true
+        
+        let gesture = UITapGestureRecognizer(target: self, action: #selector(didTapChangeProfilePic))
         imageView.addGestureRecognizer(gesture)
         // Do any additional setup after loading the view.
     }
     @objc private func didTapChangeProfilePic(){
+        presentPhotoActionSheet()
+        
         print("Change pic called")
     }
 
@@ -118,6 +126,7 @@ class RegisterViewController: UIViewController {
         scrollView.frame = view.bounds
         let size = scrollView.width / 3
         imageView.frame = CGRect(x: (scrollView.width - size) / 2, y: 40, width: size, height: size)
+        imageView.layer.cornerRadius = imageView.width / 2.0
         firstNameField.frame = CGRect(x: 30, y: imageView.bottom+10, width: scrollView.width-60, height: 52)
         lastnameField.frame = CGRect(x: 30, y: firstNameField.bottom+10, width: scrollView.width-60, height: 52)
         emailField.frame = CGRect(x: 30, y: lastnameField.bottom+10, width: scrollView.width-60, height: 52)
@@ -165,4 +174,43 @@ extension RegisterViewController: UITextFieldDelegate{
         return true
     }
     
+}
+extension RegisterViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate{
+    func presentPhotoActionSheet(){
+        let actionSheet = UIAlertController(title: "Profile Picture", message: "How would you like to select a picture", preferredStyle: .actionSheet)
+        actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        actionSheet.addAction(UIAlertAction(title: "Take Photo", style: .default, handler: { [weak self] _ in
+            self?.presentCamera()
+        }))
+        actionSheet.addAction(UIAlertAction(title: "Choose Photo", style: .default, handler: { [weak self] _ in
+            self?.presentPhotoPicker()
+        }))
+        present(actionSheet, animated: true, completion: nil)
+    }
+    
+    func presentCamera(){
+        let vc = UIImagePickerController()
+        vc.sourceType = .camera
+        vc.delegate = self
+        vc.allowsEditing = true
+        present(vc, animated: true)
+    }
+    func presentPhotoPicker(){
+        let vc = UIImagePickerController()
+        vc.sourceType = .photoLibrary
+        vc.delegate = self
+        vc.allowsEditing = true
+        present(vc, animated: true)
+    }
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        picker.dismiss(animated: true, completion: nil)
+        guard let selectedImage = info[UIImagePickerController.InfoKey.editedImage] as? UIImage else{
+            return
+        }
+        self.imageView.image = selectedImage
+    }
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true, completion: nil)
+    }
+   
 }
